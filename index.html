@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>控除額シミュレーター</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#043e80; --yellow:#f5b500;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--yellow);color:var(--blue);font-family:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;font-weight:500;line-height:1.7}
+main{max-width:560px;margin:0 auto;padding:24px 18px 56px}
+h1{font-size:1.7rem;font-weight:800;line-height:1.35;margin:0 0 8px}
+.lead{margin:0 0 24px;font-size:.95rem}
+.lead b{background:var(--blue);color:var(--yellow);border-radius:999px;padding:2px 12px;font-weight:800;white-space:nowrap}
+.card{background:var(--yellow);border:3px solid var(--blue);border-radius:20px;box-shadow:6px 6px 0 var(--blue);padding:16px;margin-bottom:22px}
+.row{display:flex;gap:12px}
+.row label{flex:1}
+label{display:block;font-size:.85rem;font-weight:800}
+input[type=number]{width:100%;font:inherit;font-weight:800;font-size:1.3rem;color:var(--blue);background:var(--yellow);border:3px solid var(--blue);border-radius:14px;padding:6px 12px;margin-top:4px}
+input[type=number]:focus{outline:none;background:var(--blue);color:var(--yellow)}
+.unit{font-size:.8rem}
+.slider-card{background:var(--blue);color:var(--yellow);border-color:var(--blue);box-shadow:6px 6px 0 var(--blue)}
+.slider-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;font-weight:800}
+.slider-head b{font-size:2.2rem;line-height:1.2}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:44px;background:transparent;margin:0;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:16px;background:var(--yellow);border-radius:999px}
+input[type=range]::-moz-range-track{height:16px;background:var(--yellow);border-radius:999px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:40px;height:40px;border-radius:50%;background:var(--yellow);border:5px solid var(--blue);box-shadow:0 0 0 3px var(--yellow);margin-top:-12px}
+input[type=range]::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:var(--yellow);border:5px solid var(--blue);box-shadow:0 0 0 3px var(--yellow)}
+input[type=range]:focus-visible{outline:3px dashed var(--yellow);outline-offset:4px}
+.ticks{display:flex;justify-content:space-between;font-size:.75rem}
+.item{margin-bottom:16px}
+.item:last-child{margin-bottom:0}
+.bar-label{display:flex;justify-content:space-between;align-items:baseline;font-weight:800;margin-bottom:4px}
+.bar-label b{font-size:1.15rem}
+.track{height:34px;border:3px solid var(--blue);border-radius:999px;overflow:hidden;background:var(--yellow)}
+.fill{height:100%;transition:width .15s}
+.f-now{background:repeating-linear-gradient(45deg,var(--blue) 0 8px,var(--yellow) 8px 16px)}
+.f-new{background:var(--blue)}
+.result{background:var(--blue);color:var(--yellow);text-align:center;transform:rotate(-1.5deg)}
+.result .small{font-weight:800}
+.result .big{font-size:2.6rem;font-weight:800;line-height:1.3}
+.formula{font-size:.9rem}
+.formula p{margin:4px 0}
+.note{font-size:.78rem}
+</style>
+</head>
+<body>
+<main>
+  <h1>控除額を上げたら、<br>税額はどうなる?</h1>
+  <p class="lead">税額 = <b>(収入 − 控除額)× 税率</b><br>スライダーを動かして確かめよう。</p>
+
+  <div class="card">
+    <div class="row">
+      <label>収入(年)
+        <input id="income" type="number" inputmode="decimal" value="500" min="0" step="10">
+        <span class="unit">万円</span>
+      </label>
+      <label>税率
+        <input id="rate" type="number" inputmode="decimal" value="10" min="0" max="100" step="1">
+        <span class="unit">%</span>
+      </label>
+    </div>
+    <label style="margin-top:12px">今の控除額
+      <input id="cur" type="number" inputmode="decimal" value="160" min="0" step="10">
+      <span class="unit">万円</span>
+    </label>
+  </div>
+
+  <div class="card slider-card">
+    <div class="slider-head"><span>新しい控除額</span><b id="newVal">200万円</b></div>
+    <input id="slider" type="range" min="0" max="500" step="1" value="200" aria-label="新しい控除額">
+    <div class="ticks"><span>0</span><span>250</span><span>500万円</span></div>
+  </div>
+
+  <div class="card">
+    <div class="item">
+      <div class="bar-label"><span>今の税額</span><b id="t0"></b></div>
+      <div class="track"><div class="fill f-now" id="b0"></div></div>
+    </div>
+    <div class="item">
+      <div class="bar-label"><span>新しい税額</span><b id="t1"></b></div>
+      <div class="track"><div class="fill f-new" id="b1"></div></div>
+    </div>
+  </div>
+
+  <div class="card result">
+    <div class="small" id="label">減税額</div>
+    <div class="big" id="diff"></div>
+  </div>
+
+  <div class="card formula" id="calc"></div>
+  <p class="note">※ 単純化した計算です。実際の所得税は累進課税(収入に応じて税率が段階的に上がる)で、社会保険料控除などもあるため、実際の税額とは異なります。住民税も別にかかります。控除額が収入を超える場合、税額は0円になります。</p>
+</main>
+
+<script>
+(function(){
+  var $ = function(id){return document.getElementById(id)};
+  var yen = function(m){var v=Math.round(m*10000);return v.toLocaleString("ja-JP")+"円";};
+  var man = function(m){return (Math.round(m*10)/10).toLocaleString("ja-JP")+"万円";};
+  function num(id){var v=parseFloat($(id).value);return isNaN(v)||v<0?0:v;}
+  function update(){
+    var inc=num("income"), r=num("rate")/100, cur=num("cur"), nw=parseFloat($("slider").value);
+    var t0=Math.max(inc-cur,0)*r, t1=Math.max(inc-nw,0)*r, d=t0-t1;
+    $("newVal").textContent=nw+"万円";
+    $("t0").textContent=yen(t0); $("t1").textContent=yen(t1);
+    var mx=Math.max(t0,t1,0.0001);
+    $("b0").style.width=(t0/mx*100)+"%";
+    $("b1").style.width=(t1/mx*100)+"%";
+    if(d>=0){$("label").textContent="1年あたりの減税額";$("diff").textContent="−"+yen(d);}
+    else{$("label").textContent="1年あたりの増税額";$("diff").textContent="+"+yen(-d);}
+    $("calc").innerHTML=
+      "<p><b>今:</b> ("+man(inc)+" − "+man(cur)+") × "+num("rate")+"% = "+yen(t0)+"</p>"+
+      "<p><b>新しい控除額:</b> ("+man(inc)+" − "+nw+"万円) × "+num("rate")+"% = "+yen(t1)+"</p>"+
+      "<p>控除が "+man(nw-cur)+" 増えると、税のかかる部分が同じだけ減るので、税額が下がります。</p>";
+  }
+  ["income","rate","cur","slider"].forEach(function(id){$(id).addEventListener("input",update);});
+  update();
+})();
+</script>
+</body>
+</html>
